@@ -5,6 +5,8 @@ import ru.rishaleva.springBootSecurity.model.User;
 import java.util.List;
 
 public interface UserService {
+    User findByUsername(String username);
+
     User findByUserEmail(String email);
 
     User getUser(Long id);
@@ -17,4 +19,7 @@ public interface UserService {
 
     void updateUser(User user);
 
+    User findByUserName(String name);
+
 }
+

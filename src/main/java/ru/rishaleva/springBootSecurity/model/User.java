@@ -6,7 +6,17 @@ import org.hibernate.annotations.FetchMode;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
 import java.util.Collection;
 import java.util.Set;
 
@@ -19,7 +29,10 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "password")
+    @Column(name = "username", nullable = false)
+    private String username;
+
+    @Column(name = "password", nullable = false)
     private String password;
 
     @Column(name = "name")
@@ -41,10 +54,10 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles;
 
-    public User() {
-    }
+    public User() { }
 
-    public User(String name, String lastName, Long age, String email) {
+    public User(String username, String name, String lastName, Long age, String email) {
+        this.username = username;
         this.name = name;
         this.lastName = lastName;
         this.age = age;
@@ -60,87 +73,61 @@ public class User implements UserDetails {
     }
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return getRoles();
+    public Collection<Role> getAuthorities() {
+        return roles;
     }
 
+    @Override
     public String getPassword() {
         return password;
     }
 
     @Override
     public String getUsername() {
-        return name;
+        return username;
     }
 
     @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
+    public boolean isAccountNonExpired() { return true; }
 
     @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
+    public boolean isAccountNonLocked() { return true; }
 
     @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
+    public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() {
-        return true;
-    }
+    public boolean isEnabled() { return true; }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    public void setPassword(String password) { this.password = password; }
 
-    public String getName() {
-        return name;
-    }
+    public void setUsername(String username) { this.username = username; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getName() { return name; }
 
-    public String getLastName() {
-        return lastName;
-    }
+    public void setName(String name) { this.name = name; }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
+    public String getLastName() { return lastName; }
 
-    public Long getAge() {
-        return age;
-    }
+    public void setLastName(String lastName) { this.lastName = lastName; }
 
-    public void setAge(Long age) {
-        this.age = age;
-    }
+    public Long getAge() { return age; }
 
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
-    }
+    public void setAge(Long age) { this.age = age; }
 
-    public Set<Role> getRoles() {
-        return roles;
-    }
+    public Set<Role> getRoles() { return roles; }
 
-    public String getEmail() {
-        return email;
-    }
+    public void setRoles(Set<Role> roles) { this.roles = roles; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public String getEmail() { return email; }
+
+    public void setEmail(String email) { this.email = email; }
 
     @Override
     public String toString() {
         return "User{" +
                 "id=" + id +
+                ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
                 ", name='" + name + '\'' +
                 ", lastName='" + lastName + '\'' +

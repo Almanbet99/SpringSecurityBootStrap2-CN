@@ -28,4 +28,14 @@ public class RoleDaoImpl implements RoleDao {
     public void addRole(Role role) {
         entityManager.persist(role);
     }
+
+    @Override
+    public List<Role> getAllRoles() {
+        return List.of();
+    }
+
+    @Override
+    public Role getRoleByName(String name) {
+        return null;
+    }
 }

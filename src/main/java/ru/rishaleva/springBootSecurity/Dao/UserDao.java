@@ -6,7 +6,7 @@ import ru.rishaleva.springBootSecurity.model.User;
 import java.util.List;
 
 @Repository
-public interface UserDao {
+public interface    UserDao {
     User findByUserEmail(String email);
 
     User getUser(Long id);
@@ -19,4 +19,8 @@ public interface UserDao {
 
     void updateUser(User user);
 
+    User findByUsername(String username);
+
+
+    User findByUserName(String username);
 }
