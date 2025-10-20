@@ -1,26 +1,16 @@
-package ru.rishaleva.springBootSecurity.Dao;
+package ru.rishaleva.springBootSecurity.dao;
 
-import org.springframework.stereotype.Repository;
 import ru.rishaleva.springBootSecurity.model.User;
-
 import java.util.List;
 
-@Repository
-public interface    UserDao {
-    User findByUserEmail(String email);
-
-    User getUser(Long id);
-
+public interface UserDao {
     List<User> getAllUsers();
-
+    User getUser(Long id);
     void addUser(User user);
-
-    void removeUser(Long id);
-
     void updateUser(User user);
-
+    void removeUser(Long id);
     User findByUsername(String username);
-
-
-    User findByUserName(String username);
 }
+
+
+

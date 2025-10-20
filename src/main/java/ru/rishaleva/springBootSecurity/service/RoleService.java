@@ -3,16 +3,10 @@ package ru.rishaleva.springBootSecurity.service;
 import ru.rishaleva.springBootSecurity.model.Role;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RoleService {
-    List<Role> getRoles();
-
-    Role findById(Long id);
-    void addRole(Role role);
-
     List<Role> getAllRoles();
-
-    Role getRoleByName(String name);
-
-    Role findByName(String roleUser);
+    void saveRole(Role role);
+    Optional<Role> getRoleByName(String name);
 }

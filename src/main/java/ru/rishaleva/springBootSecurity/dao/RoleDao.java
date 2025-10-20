@@ -1,18 +1,13 @@
-package ru.rishaleva.springBootSecurity.Dao;
+package ru.rishaleva.springBootSecurity.dao;
 
-import org.springframework.stereotype.Repository;
 import ru.rishaleva.springBootSecurity.model.Role;
 
 import java.util.List;
+import java.util.Optional;
 
-@Repository
 public interface RoleDao {
-    List<Role> getRoles();
-
-    Role findById(Long id);
-    void addRole(Role role);
-
     List<Role> getAllRoles();
-
-    Role getRoleByName(String name);
+    void saveRole(Role role);
+    Optional<Role> getRoleByName(String name);
 }
+
