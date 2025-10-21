@@ -1,6 +1,8 @@
 package ru.rishaleva.springBootSecurity.model;
 
+
 import java.util.Objects;
+
 import org.springframework.security.core.GrantedAuthority;
 
 import javax.persistence.Column;

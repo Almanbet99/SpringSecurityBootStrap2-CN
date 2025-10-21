@@ -6,7 +6,6 @@ import ru.rishaleva.springBootSecurity.dao.RoleDao;
 import ru.rishaleva.springBootSecurity.model.Role;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional
@@ -29,10 +28,22 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public Optional<Role> getRoleByName(String name) {
-        return roleDao.getRoleByName(name);
+    public Role findByNameOrThrow(String name) {
+        return roleDao.getRoleByName(name)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found: " + name));
+    }
+
+    @Override
+    public Role findByNameOrCreate(String name) {
+        return roleDao.getRoleByName(name).orElseGet(() -> {
+            Role r = new Role(name);
+            roleDao.saveRole(r);
+            return r;
+        });
+    }
+
+    @Override
+    public List<Role> findAllByIds(List<Long> ids) {
+        return roleDao.findAllByIds(ids);
     }
 }
-
-
-

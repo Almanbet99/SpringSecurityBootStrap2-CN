@@ -29,5 +29,6 @@ public class SuccessUserHandler implements AuthenticationSuccessHandler {
         } else {
             response.sendRedirect("/login?error");
         }
+
     }
 }

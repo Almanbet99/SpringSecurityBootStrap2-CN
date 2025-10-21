@@ -14,29 +14,39 @@ import java.util.Optional;
 public class RoleDaoImpl implements RoleDao {
 
     @PersistenceContext
-    private EntityManager entityManager;
+    private EntityManager em;
 
     @Override
     public List<Role> getAllRoles() {
-        return entityManager.createQuery("FROM Role", Role.class).getResultList();
+        return em.createQuery("SELECT r FROM Role r", Role.class)
+                .getResultList();
     }
 
     @Override
     public void saveRole(Role role) {
         if (role.getId() == null) {
-            entityManager.persist(role);
+            em.persist(role);
         } else {
-            entityManager.merge(role);
+            em.merge(role);
         }
     }
 
     @Override
     public Optional<Role> getRoleByName(String name) {
-        List<Role> roles = entityManager.createQuery("SELECT r FROM Role r WHERE r.name = :name", Role.class)
+        return em.createQuery("SELECT r FROM Role r WHERE r.name = :name", Role.class)
                 .setParameter("name", name)
-                .getResultList();
+                .getResultStream()
+                .findFirst();
+    }
 
-        return roles.isEmpty() ? Optional.empty() : Optional.of(roles.get(0));
+    @Override
+    public List<Role> findAllByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return em.createQuery("SELECT r FROM Role r WHERE r.id IN :ids", Role.class)
+                .setParameter("ids", ids)
+                .getResultList();
     }
 }
 
