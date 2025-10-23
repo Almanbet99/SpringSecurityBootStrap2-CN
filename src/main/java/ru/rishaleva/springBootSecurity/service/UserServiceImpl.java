@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
@@ -26,6 +26,7 @@ public class UserServiceImpl implements UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional
     @Override
     public void addUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -33,22 +34,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<User> getAllUsers() {
         return userDao.getAllUsers();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public User getUser(Long id) {
         return userDao.getUser(id);
     }
 
+    @Transactional
     @Override
     public void removeUser(Long id) {
         userDao.removeUser(id);
     }
 
+    @Transactional
     @Override
     public void updateUser(User user) {
         if (user.getPassword() == null || user.getPassword().isBlank()) {
@@ -61,12 +62,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public User findByUsername(String username) {
         return userDao.findByUsername(username);
     }
 
 
+    @Transactional
     @Override
     public void createWithRoles(User user, List<Long> roleIds) {
         var roles = new HashSet<Role>();
@@ -80,6 +81,7 @@ public class UserServiceImpl implements UserService {
         userDao.addUser(user);
     }
 
+    @Transactional
     @Override
     public void updateWithRoles(User user, List<Long> roleIds) {
         var roles = new HashSet<Role>();
@@ -96,7 +98,6 @@ public class UserServiceImpl implements UserService {
         } else if (!isBCryptHash(user.getPassword())) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
-
         userDao.updateUser(user);
     }
 
@@ -105,3 +106,4 @@ public class UserServiceImpl implements UserService {
         return value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$");
     }
 }
+

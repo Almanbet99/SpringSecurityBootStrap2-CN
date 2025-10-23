@@ -8,7 +8,7 @@ import ru.rishaleva.springBootSecurity.model.Role;
 import java.util.List;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class RoleServiceImpl implements RoleService {
 
     private final RoleDao roleDao;
@@ -22,6 +22,7 @@ public class RoleServiceImpl implements RoleService {
         return roleDao.getAllRoles();
     }
 
+    @Transactional
     @Override
     public void saveRole(Role role) {
         roleDao.saveRole(role);
@@ -47,3 +48,4 @@ public class RoleServiceImpl implements RoleService {
         return roleDao.findAllByIds(ids);
     }
 }
+
