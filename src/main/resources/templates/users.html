@@ -67,6 +67,7 @@
                             <thead>
                             <tr>
                                 <th style="width:70px;">ID</th>
+                                <th>Login</th>
                                 <th>First Name</th>
                                 <th>Last Name</th>
                                 <th style="width:90px;">Age</th>
@@ -134,8 +135,8 @@
 
 <script>
     const api = {
-        users: '/api/users',
-        roles: '/api/roles'
+        users: '/api/admin/users',
+        roles: '/api/admin/roles'
     };
 
     let ROLES = [];
@@ -144,25 +145,32 @@
     const $createForm = document.getElementById('create-form');
     const $createRoles = document.getElementById('create-roles');
 
+    // ===== fetch utils =====
     async function getJSON(url) {
-        const res = await fetch(url, {credentials: 'same-origin'});
-        if (!res.ok) throw new Error(await res.text());
+        const res = await fetch(url, { credentials: 'same-origin' });
+        if (!res.ok) throw new Error(await safeText(res));
         return res.json();
     }
     async function sendJSON(url, method, data) {
         const res = await fetch(url, {
             method,
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin',
             body: JSON.stringify(data)
         });
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) throw new Error(await safeText(res));
         return res.status === 204 ? null : res.json();
     }
-    function roleBadge(name) {
-        return `<span class="badge text-bg-secondary me-1">${name.replace('ROLE_','')}</span>`;
+    async function safeText(res) {
+        try { return await res.text(); } catch { return `HTTP ${res.status}`; }
     }
+    const esc = (s) => String(s ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+    // ===== roles =====
+    function roleBadge(name) {
+        return `<span class="badge text-bg-secondary me-1">${name.replace(/^ROLE_/,'')}</span>`;
+    }
     function renderRolesSelect($select, selectedIds = []) {
         $select.innerHTML = ROLES.map(r => {
             const sel = selectedIds.includes(r.id) ? 'selected' : '';
@@ -170,16 +178,18 @@
         }).join('');
     }
 
+    // ===== users table =====
     function renderUsersTable(users) {
         $tbody.innerHTML = users.map(u => {
-            const rolesBadges = u.roles.map(r => roleBadge(r.name)).join('');
+            const rolesBadges = (u.roles || []).map(r => roleBadge(r.name)).join('');
             return `
         <tr data-id="${u.id}">
           <td>${u.id}</td>
-          <td>${u.name}</td>
-          <td>${u.lastName}</td>
-          <td>${u.age}</td>
-          <td>${u.email}</td>
+          <td>${esc(u.username)}</td>
+          <td>${esc(u.name)}</td>
+          <td>${esc(u.lastName)}</td>
+          <td>${u.age ?? ''}</td>
+          <td>${esc(u.email)}</td>
           <td>${rolesBadges}</td>
           <td><button class="btn btn-sm btn-info text-white" data-action="edit" data-id="${u.id}">Edit</button></td>
           <td><button class="btn btn-sm btn-danger" data-action="delete" data-id="${u.id}">Delete</button></td>
@@ -187,14 +197,16 @@
         }).join('');
     }
 
+
     async function loadAll() {
         ROLES = await getJSON(api.roles);
         renderRolesSelect($createRoles, []);
         const roleUser = ROLES.find(r => r.name === 'ROLE_USER');
         if (roleUser) {
-            [...$createRoles.options].forEach(o => { if (Number(o.value) === roleUser.id) o.selected = true; });
+            [...$createRoles.options].forEach(o => {
+                if (Number(o.value) === roleUser.id) o.selected = true;
+            });
         }
-
         const users = await getJSON(api.users);
         renderUsersTable(users);
     }
@@ -216,9 +228,10 @@
         try {
             await sendJSON(api.users, 'POST', payload);
             $createForm.reset();
-            renderRolesSelect($createRoles, roleIds);
+            renderRolesSelect($createRoles, roleIds); // оставить выбор ролей
             const users = await getJSON(api.users);
             renderUsersTable(users);
+            // вернуть на таб Users
             const tabTriggerEl = document.querySelector('a[href="#users-pane"]');
             const tab = new bootstrap.Tab(tabTriggerEl);
             tab.show();
@@ -226,6 +239,7 @@
             alert('Create failed: ' + err.message);
         }
     });
+
 
     $tbody.addEventListener('click', async (e) => {
         const btn = e.target.closest('button[data-action]');
@@ -236,7 +250,8 @@
         if (action === 'delete') {
             if (!confirm(`Delete user #${id}?`)) return;
             try {
-                await fetch(`${api.users}/${id}`, {method: 'DELETE', credentials: 'same-origin'});
+                const res = await fetch(`${api.users}/${id}`, { method: 'DELETE', credentials: 'same-origin' });
+                if (!res.ok) throw new Error(await safeText(res));
                 document.querySelector(`tr[data-id="${id}"]`)?.remove();
             } catch (err) {
                 alert('Delete failed: ' + err.message);
@@ -244,13 +259,17 @@
         }
 
         if (action === 'edit') {
-            const u = await getJSON(`${api.users}/${id}`);
-            openEditModal(u);
+            try {
+                const u = await getJSON(`${api.users}/${id}`);
+                openEditModal(u);
+            } catch (err) {
+                alert('Load user failed: ' + err.message);
+            }
         }
     });
 
-    function openEditModal(u) {
 
+    function openEditModal(u) {
         const modalEl = document.createElement('div');
         modalEl.className = 'modal fade';
         modalEl.tabIndex = -1;
@@ -265,7 +284,7 @@
             <div class="modal-body">
               <div class="mb-3">
                 <label class="form-label">Login</label>
-                <input class="form-control" name="username" value="${u.username}" required>
+                <input class="form-control" name="username" value="${esc(u.username)}" required>
               </div>
               <div class="mb-3">
                 <label class="form-label">Password (leave blank to keep)</label>
@@ -274,21 +293,21 @@
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">First Name</label>
-                  <input class="form-control" name="name" value="${u.name}" required>
+                  <input class="form-control" name="name" value="${esc(u.name)}" required>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Last Name</label>
-                  <input class="form-control" name="lastName" value="${u.lastName}" required>
+                  <input class="form-control" name="lastName" value="${esc(u.lastName)}" required>
                 </div>
               </div>
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Age</label>
-                  <input class="form-control" type="number" min="0" name="age" value="${u.age}" required>
+                  <input class="form-control" type="number" min="0" name="age" value="${u.age ?? ''}" required>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Email</label>
-                  <input class="form-control" type="email" name="email" value="${u.email}" required>
+                  <input class="form-control" type="email" name="email" value="${esc(u.email)}" required>
                 </div>
               </div>
               <div class="mb-3">
@@ -308,23 +327,25 @@
         const modal = new bootstrap.Modal(modalEl);
 
         const $editRoles = modalEl.querySelector('#edit-roles');
-        const selectedIds = u.roles.map(r => r.id);
+        const selectedIds = (u.roles || []).map(r => r.id);
         renderRolesSelect($editRoles, selectedIds);
-
 
         modalEl.querySelector('#edit-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
             const roleIds = [...$editRoles.selectedOptions].map(o => Number(o.value));
+
             const payload = {
                 username: fd.get('username'),
-                password: fd.get('password'),
                 name: fd.get('name'),
                 lastName: fd.get('lastName'),
                 age: Number(fd.get('age')),
                 email: fd.get('email'),
                 roleIds
             };
+            const pwd = fd.get('password');
+            if (pwd) payload.password = pwd;
+
             try {
                 await sendJSON(`${api.users}/${u.id}`, 'PUT', payload);
                 const users = await getJSON(api.users);
@@ -340,8 +361,8 @@
         modal.show();
     }
 
-
     loadAll().catch(err => alert('Init failed: ' + err.message));
 </script>
 </body>
 </html>
+
