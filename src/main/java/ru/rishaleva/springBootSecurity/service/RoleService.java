@@ -12,4 +12,6 @@ public interface RoleService {
     Role findByNameOrCreate(String name);
 
     List<Role> findAllByIds(List<Long> ids);
+
+    int getByIds(List<Long> roleIds);
 }

@@ -4,11 +4,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.rishaleva.springBootSecurity.dao.UserDao;
-import ru.rishaleva.springBootSecurity.model.Role;
+import ru.rishaleva.springBootSecurity.dto.UserRequest;
+import ru.rishaleva.springBootSecurity.dto.UserResponse;
 import ru.rishaleva.springBootSecurity.model.User;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -26,11 +29,68 @@ public class UserServiceImpl implements UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    @Transactional
+
     @Override
-    public void addUser(User user) {
+    public List<UserResponse> getAllUserResponses() {
+        return userDao.getAllUsers().stream()
+                .map(UserResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public UserResponse getUserResponseById(Long id) {
+        User user = userDao.getUserById(id);
+        if (user == null) throw new EntityNotFoundException("User not found");
+        return UserResponse.from(user);
+    }
+
+
+    @Override
+    @Transactional
+    public UserResponse createUser(UserRequest request) {
+        User user = request.toUserForCreate();
+        user.setRoles(new HashSet<>(roleService.getByIds(request.getRoleIds())));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userDao.addUser(user);
+        return UserResponse.from(user);
+    }
+
+
+    @Override
+    @Transactional
+    public UserResponse updateUser(Long id, UserRequest request) {
+        User existing = userDao.getUserById(id);
+        if (existing == null) throw new EntityNotFoundException("User not found");
+
+        existing.setUsername(request.getUsername());
+        existing.setName(request.getName());
+        existing.setLastName(request.getLastName());
+        existing.setAge(request.getAge());
+        existing.setEmail(request.getEmail());
+
+        existing.setRoles(new HashSet<>(roleService.getByIds(request.getRoleIds())));
+
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            existing.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        userDao.updateUser(existing);
+        return UserResponse.from(existing);
+    }
+
+
+    @Override
+    @Transactional
+    public void deleteUser(Long id) {
+        User user = userDao.getUserById(id);
+        if (user == null) throw new EntityNotFoundException("User not found");
+        userDao.removeUser(id);
+    }
+
+
+    @Override
+    public User findByUsername(String username) {
+        return userDao.findByUsername(username);
     }
 
     @Override
@@ -39,8 +99,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User getUser(Long id) {
-        return userDao.getUser(id);
+    @Transactional
+    public void addUser(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        userDao.addUser(user);
     }
 
     @Transactional
@@ -49,60 +111,9 @@ public class UserServiceImpl implements UserService {
         userDao.removeUser(id);
     }
 
-    @Transactional
     @Override
-    public void updateUser(User user) {
-        if (user.getPassword() == null || user.getPassword().isBlank()) {
-            User existing = userDao.getUser(user.getId());
-            user.setPassword(existing.getPassword());
-        } else if (!isBCryptHash(user.getPassword())) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-        }
-        userDao.updateUser(user);
-    }
-
-    @Override
-    public User findByUsername(String username) {
-        return userDao.findByUsername(username);
-    }
-
-    @Transactional
-    @Override
-    public void createWithRoles(User user, List<Long> roleIds) {
-        var roles = new HashSet<Role>();
-        if (roleIds == null || roleIds.isEmpty()) {
-            roles.add(roleService.findByNameOrThrow("ROLE_USER"));
-        } else {
-            roles.addAll(roleService.findAllByIds(roleIds));
-        }
-        user.setRoles(roles);
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userDao.addUser(user);
-    }
-
-    @Transactional
-    @Override
-    public void updateWithRoles(User user, List<Long> roleIds) {
-        var roles = new HashSet<Role>();
-        if (roleIds == null || roleIds.isEmpty()) {
-            roles.add(roleService.findByNameOrThrow("ROLE_USER"));
-        } else {
-            roles.addAll(roleService.findAllByIds(roleIds));
-        }
-        user.setRoles(roles);
-
-        if (user.getPassword() == null || user.getPassword().isBlank()) {
-            User existing = userDao.getUser(user.getId());
-            user.setPassword(existing.getPassword());
-        } else if (!isBCryptHash(user.getPassword())) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-        }
-        userDao.updateUser(user);
-    }
-
-    private boolean isBCryptHash(String value) {
-        if (value == null) return false;
-        return value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$");
+    public User getUser(Long id) {
+        return userDao.getUserById(id);
     }
 }
 
